@@ -510,7 +510,7 @@ class VTLP(BaseWaveformTransform):
         datatype = spec[0, 0].dtype
         n_freqs, n_time = spec.shape
         new_freqs = self.get_new_freqs(n_freqs, n_fft)
-        new_spec = torch.zeros(n_freqs, n_time, dtype=datatype)
+        new_spec = torch.zeros(n_freqs, n_time, dtype=datatype)#
 
         for i in range(n_freqs):
             if (i != 0) & (i+1 < n_freqs):
