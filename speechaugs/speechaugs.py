@@ -39,7 +39,7 @@ class TimeStretchLibrosa(BaseWaveformTransform):
     def __init__(self, always_apply=False, p=0.5, sr=16000, max_duration=10., min_rate=0.5, max_rate=2.):
 
         super(TimeStretchLibrosa, self).__init__(always_apply, p)
-        assert min_rate < max_rate, 'min_rate >= max_rate'
+        #assert min_rate < max_rate, 'min_rate >= max_rate'
 
         self.max_duration = max_duration
         self.sr = sr
@@ -56,7 +56,9 @@ class TimeStretchLibrosa(BaseWaveformTransform):
 
         if waveform.shape[1]/rate>=self.max_duration*self.sr-1000:
             rate = np.random.uniform(1., 2.) # If length is greater than max_duration then we increase speed up to 2 times
-        waveform = time_stretch(waveform[0].numpy(), rate)
+        waveform = time_stretch(y=waveform[0].numpy(), 
+                                rate=rate
+                                )
                 
         return torch.tensor(waveform, dtype=torch.float).unsqueeze(0)
 
@@ -78,7 +80,7 @@ class PitchShiftLibrosa(BaseWaveformTransform):
     def __init__(self, always_apply=False, p=0.5, sr=16000, min_steps=-10, max_steps=10):
 
         super(PitchShiftLibrosa, self).__init__(always_apply, p)
-        assert min_steps < max_steps, 'min_steps >= max_steps'
+        #assert min_steps < max_steps, 'min_steps >= max_steps'
 
         self.sr = sr
         self.min_steps = min_steps
@@ -90,8 +92,12 @@ class PitchShiftLibrosa(BaseWaveformTransform):
         assert waveform.shape[1] > 0, 'waveform is empty'
         waveform = waveform.clone()
 
-        n_steps = np.random.randint(self.min_steps, self.max_steps) # n_steps < 0 -- shift down, n_steps > 0 -- shift up
-        waveform = pitch_shift(waveform[0].numpy(), self.sr, n_steps=n_steps, bins_per_octave=12)
+        n_steps = np.random.randint(self.min_steps, self.max_steps + 1) # n_steps < 0 -- shift down, n_steps > 0 -- shift up
+        waveform = pitch_shift(y=waveform[0].numpy(),
+                                sr=self.sr,
+                                n_steps=n_steps, 
+                                #bins_per_octave=12
+                                )
         
         return torch.tensor(waveform, dtype=torch.float).unsqueeze(0)
 
@@ -120,7 +126,7 @@ class ForwardTimeShift(BaseWaveformTransform):
       waveform = waveform.clone()
       dif = int(self.sr*self.max_duration - waveform.shape[1])
       if dif > 0:
-          shift = np.random.randint(0, dif)
+          shift = np.random.randint(0, dif + 1)
           waveform = torch.cat((torch.zeros(waveform.shape[0], shift, dtype=torch.float), waveform), dim = 1)
           return waveform
       else:
@@ -458,7 +464,6 @@ class Normalization(BaseWaveformTransform):
 class VTLP(BaseWaveformTransform):
     """
        http://www.cs.toronto.edu/~hinton/absps/perturb.pdf
-       https://github.com/makcedward/nlpaug
 
        Apply vocal tract length perturbation to single-channel waveform
 
